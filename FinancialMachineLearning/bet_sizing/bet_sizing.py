@@ -151,12 +151,14 @@ def bet_size_probability(events, prob, num_classes, pred=None, step_size=0.0, av
 
     return signal_1
 
-def bet_size_dynamic(current_pos,
-                     max_pos, market_price,
-                     forecast_price,
-                     cal_divergence=10,
-                     cal_bet_size=0.95,
-                     func='sigmoid'):
+def bet_size_dynamic(
+        current_pos,
+        max_pos,
+        market_price,
+        forecast_price,
+        cal_divergence = 10,
+        cal_bet_size = 0.95,
+        func='sigmoid'):
     d_vars = {'pos': current_pos, 'max_pos': max_pos, 'm_p': market_price, 'f': forecast_price}
     events_0 = confirm_and_cast_to_df(d_vars)
     w_param = get_w(cal_divergence, cal_bet_size, func)
@@ -174,14 +176,16 @@ def bet_size_budget(events_t1, sides):
     events_1['bet_size'] = frac_active_long - frac_active_short
     return events_1
 
-def bet_size_reserve(events_t1, sides,
-                     fit_runs=100,
-                     epsilon=1e-5,
-                     factor=5,
-                     variant=2,
-                     max_iter=10_000,
-                     num_workers=1,
-                     return_parameters=False):
+def bet_size_reserve(
+        events_t1,
+        sides,
+        fit_runs = 100,
+        epsilon = 1e-5,
+        factor = 5,
+        variant = 2,
+        max_iter = 10_000,
+        num_workers = 1,
+        return_parameters = False):
     events_active = get_concurrent_sides(events_t1, sides)
     events_active['c_t'] = events_active['active_long'] - events_active['active_short']
     central_mmnts = [moment(events_active['c_t'].to_numpy(), moment=i) for i in range(1, 6)]
