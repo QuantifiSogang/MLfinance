@@ -1,28 +1,56 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import norm, moment
+from scipy.stats import norm, moment, t
+import numbers
 
 from FinancialMachineLearning.bet_sizing.ef3m import M2N, raw_moment, most_likely_parameters
 from FinancialMachineLearning.utils.multiprocess import mp_pandas_obj
 import warnings
 
-def de_prado_bet_size(prob_series, clip = True):
-    # Can't compute for p = 1 or p = 0, leads to inf.
-    p = prob_series.copy()
-    p[p == 1] = 0.99999
-    p[p == 0] = 0.00001
+def get_gaussian_betsize(probs, num_classes=2, eps=1e-4):
+    max_prob = 1 - eps
+    min_prob = eps
+    if isinstance(probs, numbers.Number):
+        if probs >= min_prob and probs <= max_prob:
+            signal = (probs - 1. / num_classes) / np.sqrt(probs * (1 - probs))
+            signal = 2 * norm.cdf(signal) - 1
+        elif probs < min_prob:
+            signal = -1
+        elif probs > max_prob:
+            signal = 1
+        else:
+            raise ValueError(f"Unkonwn probabilty: {probs}")
+    else:
+        signal = probs.copy()
+        signal[probs >= max_prob] = 1
+        signal[probs <= min_prob] = -1
+        cond = (probs < max_prob) & (probs > min_prob)
+        signal[cond] = (probs[cond] - 1. / num_classes) / np.sqrt(probs[cond] * (1 - probs[cond]))
+        signal[cond] = 2 * norm.cdf(signal[cond]) - 1
+    return signal
 
-    # Getting max value from training set
-    num_classes = 2
-    dp_sizes = (p - 1 / num_classes) / ((p * (1 - p)) ** 0.5)
+def get_tstats_betsize(probs, N, num_classes=2, eps=1e-4):
+    max_prob = 1 - eps
+    min_prob = eps
+    if isinstance(probs, numbers.Number):
+        if probs >= min_prob and probs <= max_prob:
+            signal = (probs - 1. / num_classes) / np.sqrt(probs * (1 - probs)) * np.sqrt(N)
+            signal = 2 * t.cdf(signal, df=N-1) - 1
+        elif probs < min_prob:
+            signal = -1
+        elif probs > max_prob:
+            signal = 1
+        else:
+            raise ValueError(f"Unkonwn probabilty: {probs}")
+    else:
+        signal = probs.copy()
+        signal[probs >= max_prob] = 1
+        signal[probs <= min_prob] = -1
+        cond = (probs < max_prob) & (probs > min_prob)
+        signal[cond] = (probs[cond] - 1. / num_classes) / np.sqrt(probs[cond] * (1 - probs[cond])) * np.sqrt(N)
+        signal[cond] = 2 * t.cdf(signal[cond], df=N-1) - 1
+    return signal
 
-    dp_t_sizes = dp_sizes.apply(lambda s: norm.cdf(s))
-    dp_bet_sizes = dp_t_sizes
-
-    # no sigmoid function, only clipping?
-    dp_bet_sizes[dp_bet_sizes < 0.5] = 0
-
-    return dp_bet_sizes
 
 def get_signal(prob, num_classes, pred = None):
     if prob.shape[0] == 0:
