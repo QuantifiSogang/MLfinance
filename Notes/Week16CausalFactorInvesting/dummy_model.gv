@@ -1,0 +1,20 @@
+digraph G {
+	graph [label="Analysis of Financial Indicators"]
+	node [shape=ellipse]
+	subgraph cluster_0 {
+		color=lightgrey style=filled
+		HML
+		"Order Imbalance"
+		"Price Convergence" [fillcolor=grey style=filled]
+		label="Key Financial Pathways"
+		rank=same
+	}
+	Momentum -> HML
+	Momentum -> "Price Convergence"
+	HML -> "Order Imbalance"
+	"Order Imbalance" -> "Price Convergence"
+	"Order Imbalance" -> "Bid Ask Spread"
+	"Price Convergence" -> "Bid Ask Spread"
+	"Bid Ask Spread" -> Liquidity
+	"Bid Ask Spread" -> Volatility
+}
